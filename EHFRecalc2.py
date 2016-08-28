@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Fri Aug 26 00:41:34 2016
+
+@author: a1091793
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Tue Aug 16 16:36:40 2016
 
 @author: a1091793
@@ -16,12 +23,12 @@ import pandas.rpy.common as com
 
 #gPdtest = importr('gPdtest')
 
-def calcEHF_recalc(file_path, path_out, replicate, t95):
+def calcEHF_recalc2(file_path, path_out, replicate, t95, q85):
     # Year, Month, Day, Weather State (you probably won’t use this), Rainfall (mm), Tmax (oC), Tmin (oC), Short wave solar radiation (MJ/m2), Vapour Pressure Deficit (hPa), Morton’s APET (mm).
     raw = np.dtype([('year', np.uint), ('month', np.uint), ('day', np.uint), ('wState', np.uint),('rain', np.float_), ('maxT', np.float_), ('minT', np.float_), ('srad', np.float_), ('pres', np.float_), ('apet', np.float_)])
-    calced = np.dtype([('dmt', np.float_), ('3day', np.float_), ('30day', np.float_), ('EHI_sig', np.float_), ('EHI_accl', np.float_), ('EHF', np.float_), ('EHF_respec', np.float_), ('Heatwave_day', np.uint)])
+    calced = np.dtype([('dmt', np.float_), ('3day', np.float_), ('30day', np.float_), ('EHI_sig', np.float_), ('EHI_accl', np.float_), ('EHF', np.float_), ('EHF_respec', np.float_), ('Heatwave_day', np.uint), ('Severity', np.float_), ('low', np.uint), ('medium', np.uint), ('high', np.uint)])
     dt = np.dtype([('raw', raw), ('calced',calced)])
-    column_header = 'year\tmonth\tday\twState\train\tmaxT\tminT\tsrad\tpres\tapet\tdmt\t3day\t30day\tEHI_sig\tEHI_accl\tEHF\tEHF_respec\n'
+    column_header = 'year\tmonth\tday\twState\train\tmaxT\tminT\tsrad\tpres\tapet\tdmt\t3day\t30day\tEHI_sig\tEHI_accl\tEHF\tEHF_respec\tseverity\tlow\medium\high\n'
     
     raw_data = np.loadtxt(file_path, dtype=raw)
     data = np.empty(raw_data.size, dt)
@@ -94,7 +101,10 @@ def calcEHF_recalc(file_path, path_out, replicate, t95):
             cd['EHF'] = 0
             cd['EHF_respec'] = 0
             
-        cd['Heatwave_day'] = 0    
+        cd['Heatwave_day'] = 0 
+        cd['low'] = 0
+        cd['medium'] = 0
+        cd['high'] = 0
                 
         #print index
         it.iternext()
@@ -137,6 +147,9 @@ def calcEHF_recalc(file_path, path_out, replicate, t95):
     tot_days = 0                #27
     prop_days = 0               #28
     avg_ehf = 0                 #29
+    num_low_days = 0            #30
+    num_mod_days = 0            #31
+    num_high_days = 0           #32
     yearly_stats = {}
 
     f = open(path_out, 'w')
@@ -153,6 +166,14 @@ def calcEHF_recalc(file_path, path_out, replicate, t95):
         rd = data[index]['raw']
         cd = data[index]['calced']
         if (cd['EHF_respec'] > 0):
+            cd['Severity'] = cd['EHF_respec'] / q85
+            if (cd['Severity'] > 1):
+                if (cd['Severity'] > 3):
+                    cd['high'] = 1
+                else:
+                    cd['medium'] = 1
+            else:
+                cd['low'] = 1
             cd['Heatwave_day'] = 1
             if ((index - 1 ) > 0 ):
                 data[index - 1]['calced']['Heatwave_day'] = 1
@@ -164,7 +185,7 @@ def calcEHF_recalc(file_path, path_out, replicate, t95):
         
         year = rd['year']
         if year not in yearly_stats:
-            yearly_stats[year] = [0.0] * 30
+            yearly_stats[year] = [0.0] * 33
         month = rd['month']
         if (1 <= month <= 2) or (month == 12):
             # summer
@@ -221,6 +242,16 @@ def calcEHF_recalc(file_path, path_out, replicate, t95):
                     max_ehf_spring = cd['EHF_respec']
                 if (cd['EHF_respec'] > yearly_stats[year][11]): 
                     yearly_stats[year][11] = cd['EHF_respec']
+                    
+        if (cd['high'] > 0):
+            num_high_days += 1
+            yearly_stats[year][32] += 1
+        if (cd['medium'] > 0):
+            num_mod_days += 1
+            yearly_stats[year][31] += 1
+        if (cd['low'] > 0):
+            num_low_days += 1
+            yearly_stats[year][30] += 1
             
     prop_days_in_summer = sum_days_summer / float(tot_days_in_summer)
     prop_days_in_autumn = sum_days_autumn / float(tot_days_in_autumn)
@@ -314,16 +345,19 @@ def calcEHF_recalc(file_path, path_out, replicate, t95):
         f_stats.write("max_ehf\t"    + str(max_ehf) + "\n")
         f_stats.write("tot_days\t"   + str(tot_days) + "\n")
         f_stats.write("prop_days\t"  + str(prop_days) + "\n")
-        f_stats.write("avg_ehf\t"    + str(avg_ehf))
+        f_stats.write("avg_ehf\t"    + str(avg_ehf) + "\n")
+        f_stats.write("days_low\t"  +str(num_low_days) + "\n")
+        f_stats.write("days_medium\t"  +str(num_mod_days) + "\n")
+        f_stats.write("days_high\t"  +str(num_high_days))
 
     
-    stats = [sum_days_summer, sum_days_autumn, sum_days_winter, sum_days_spring, sum_ehf_summer, sum_ehf_autumn, sum_ehf_winter, sum_ehf_spring, max_ehf_summer, max_ehf_autumn, max_ehf_winter, max_ehf_spring, tot_days_in_summer, tot_days_in_autumn, tot_days_in_winter, tot_days_in_spring, prop_days_in_summer, prop_days_in_autumn, prop_days_in_winter, prop_days_in_spring, avg_ehf_summer, avg_ehf_autumn, avg_ehf_winter, avg_ehf_spring, sum_days, sum_ehf, max_ehf, tot_days, prop_days, avg_ehf]
+    stats = [sum_days_summer, sum_days_autumn, sum_days_winter, sum_days_spring, sum_ehf_summer, sum_ehf_autumn, sum_ehf_winter, sum_ehf_spring, max_ehf_summer, max_ehf_autumn, max_ehf_winter, max_ehf_spring, tot_days_in_summer, tot_days_in_autumn, tot_days_in_winter, tot_days_in_spring, prop_days_in_summer, prop_days_in_autumn, prop_days_in_winter, prop_days_in_spring, avg_ehf_summer, avg_ehf_autumn, avg_ehf_winter, avg_ehf_spring, sum_days, sum_ehf, max_ehf, tot_days, prop_days, avg_ehf, num_low_days, num_mod_days, num_high_days]
         
-    with open('yearly_stats_rep' + str(replicate) + '.txt', 'w') as f_ystats:
-        f_ystats.write("year\tsum_days_summer\tsum_days_autumn\tsum_days_winter\tsum_days_spring\tsum_ehf_summer\tsum_ehf_autumn\tsum_ehf_winter\tsum_ehf_spring\tmax_ehf_summer\tmax_ehf_autumn\tmax_ehf_winter\tmax_ehf_spring\ttot_days_in_summer\ttot_days_in_autumn\ttot_days_in_winter\ttot_days_in_spring\tprop_days_in_summer\tprop_days_in_autumn\tprop_days_in_winter\tprop_days_in_spring\tavg_ehf_summer\tavg_ehf_autumn\tavg_ehf_winter\tavg_ehf_spring\tsum_days\tsum_ehf\tmax_ehf\ttot_days\tprop_days\tavg_ehf\t")
+    with open('yearly_stats2_rep' + str(replicate) + '.txt', 'w') as f_ystats:
+        f_ystats.write("year\tsum_days_summer\tsum_days_autumn\tsum_days_winter\tsum_days_spring\tsum_ehf_summer\tsum_ehf_autumn\tsum_ehf_winter\tsum_ehf_spring\tmax_ehf_summer\tmax_ehf_autumn\tmax_ehf_winter\tmax_ehf_spring\ttot_days_in_summer\ttot_days_in_autumn\ttot_days_in_winter\ttot_days_in_spring\tprop_days_in_summer\tprop_days_in_autumn\tprop_days_in_winter\tprop_days_in_spring\tavg_ehf_summer\tavg_ehf_autumn\tavg_ehf_winter\tavg_ehf_spring\tsum_days\tsum_ehf\tmax_ehf\ttot_days\tprop_days\tavg_ehf\tlow\tmedium\thigh\n")
         for year, stats in yearly_stats.items():
             f_ystats.write(str(year)+"\t")
-            for i in range(0, 30): 
+            for i in range(0, 33): 
                 f_ystats.write(str(stats[i]) + "\t")
             f_ystats.write("\n")
     
