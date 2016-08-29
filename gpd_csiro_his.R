@@ -4,8 +4,10 @@ gpd_ehf <- function(path_data){
   ehf <- read.table(path_data)
   fit <- gpdFit(ehf$V1, type = 'mle', u = 0)
   pars <- fit@fit$par.ests
-  q85 = qgpd(0.85, xi = pars['xi'], mu = 0, beta = pars['beta'])
-  return(q85)
+  q85 <- qgpd(0.85, xi = pars['xi'], mu = 0, beta = pars['beta'])
+  val <- c(q85, pars[1], pars[2])
+  val <- setNames(val, c("qgpd85", "xi", "beta"))
+  return(val)
 }
 
 

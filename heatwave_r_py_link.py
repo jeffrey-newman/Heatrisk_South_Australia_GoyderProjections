@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Aug 29 10:42:17 2016
+Created on Mon Aug 29 11:38:06 2016
 
 @author: a1091793
 """
-
 import numpy as np
 import scipy as sp
 import rpy2
@@ -19,8 +18,12 @@ from rpy2.robjects.vectors import StrVector
 utils = rpackages.importr('utils')
 # select a mirror for R packages
 utils.chooseCRANmirror(ind=1) # select the first mirror in the list
+
 # R package names
-packnames = ('fExtremes', '')
+packnames = ('fExtremes', 'ggplot2')
+
+# R vector of strings
+from rpy2.robjects.vectors import StrVector
 
 # Selectively install what needs to be install.
 # We are fancy, just because we can.
@@ -30,17 +33,22 @@ if len(names_to_install) > 0:
     
 fExtremes = importr('fExtremes')
 
+
 r_gpd_ehf = robjects.r('''
-        # create a function `gpd_ehf`
-        gpd_ehf <- function(path_data) {
-            ehf <- read.table(path_data)
-            fit <- gpdFit(ehf$V1, type = 'mle', u = 0)
-            pars <- fit@fit$par.ests
-            q85 = qgpd(0.85, xi = pars['xi'], mu = 0, beta = pars['beta'])
-            return(q85)
-        }
-        ''')
+                        gpd_ehf <- function(path_data){
+                          ehf <- read.table(path_data)
+                          fit <- gpdFit(ehf$V1, type = 'mle', u = 0)
+                          pars <- fit@fit$par.ests
+                          q85 <- qgpd(0.85, xi = pars['xi'], mu = 0, beta = pars['beta'])
+                          val <- c(q85, pars[1], pars[2])
+                          val <- setNames(val, c("qgpd85", "xi", "beta"))
+                          return(val)
+                        }
+                        ''')
+    
+res = r_gpd_ehf(r"/Volumes/home/QNAP RTRR Folder/Data/South Australia Goyder-CSIRO downscaled future climates/Adelaide_Mt_Lofty_Ranges/Processed/csiro.mk36/his/23013/heat_wave_ehfs.txt")     
 
-r_gpd_ehf_f = robjects.r['gpd_ehf']
+qgpd85 = res[0]
+xi = res[1]
+beta = res[2]
 
-r_gpd_ehf("/Volumes/home/QNAP RTRR Folder/Data/South Australia Goyder-CSIRO downscaled future climates/Adelaide_Mt_Lofty_Ranges/Processed/csiro.mk36/his/23013/heat_wave_ehfs.txt")
