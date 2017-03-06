@@ -1,7 +1,14 @@
 import numpy as np
 import fileinput
+import re
+
 
 def readStationList(stationList_file):
+    """
+    Reads a 'blank' seperated text file with a list of stations with their corresponding coordinates.
+    :param stationList_file: The file containing a list of stations with their coordinates
+    :return: An Python dict with stationa names mapped to their coordinates.revious
+    """
     statn_info = dict()
     for line in fileinput.input(stationList_file):
         statn_id = line[:6]
@@ -13,8 +20,10 @@ def readStationList(stationList_file):
         statn_lat_flt = float(statn_lat)
         #s = "station id: " + statn_id + " with name: " + statn_name + " located at: " + statn_lat + " lat, " + statn_long + " long"
         #print(s)
-        statn_info[statn_id_int] = [statn_name, statn_long_flt, statn_lat_flt]
-        
+        statn_name2 = statn_name.strip()
+        re.sub(r'[^\w]', ' ', statn_name2)
+        statn_info[statn_id_int] = [statn_name2, statn_long_flt, statn_lat_flt]
+
     return (statn_info)
-    
+
 

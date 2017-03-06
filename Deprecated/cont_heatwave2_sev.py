@@ -1,0 +1,182 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Aug 17 03:35:29 2016
+
+@author: a1091793
+"""
+import pickle
+from functools import reduce
+import os
+import errno
+
+from collections import Counter
+
+import EHFTimeseries
+from EHFTimeseries import calcEHF
+import EHFRecalc
+from EHFRecalc import calcEHF_recalc
+import EHFRecalc2
+from EHFRecalc2 import calcEHF_recalc2
+import ReadStationList
+from ReadStationList import readStationList
+import ListRawDataFiles
+from ListRawDataFiles import listRawDataFiles
+
+import imp
+from imp import reload
+imp.reload(EHFTimeseries); from EHFTimeseries import calcEHF
+imp.reload(EHFRecalc2); from EHFRecalc2 import calcEHF_recalc2
+imp.reload(ReadStationList); from ReadStationList import readStationList
+imp.reload(ListRawDataFiles); from ListRawDataFiles import listRawDataFiles
+
+column_hdrs = "GCM\tScenario\tStationNum\tReplicate\tT95\n"
+
+def make_sure_path_exists(path):
+    try:
+        os.makedirs(path)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise
+            
+def combine_stat_dicts(a, b):
+    combined = {}
+    for year, a_stats in a.items():
+        new_stats = a_stats.copy()
+        if year in b:
+            b_stats = b[year]
+            for index, stat in enumerate(new_stats):
+                new_stats[index] += b_stats[index]
+        combined[year] = new_stats
+    return combined          
+                
+            
+            
+
+
+#t95_avg_vals = {}
+#for gcm, gcm_dicts in t95_vals.items():
+#    
+#    if gcm not in t95_avg_vals:
+#        t95_avg_vals[gcm] = {}
+#    if (gcm == "csiro.mk36"):
+#        for sc, sc_dicts in gcm_dicts.items(): 
+#            
+#            if sc not in t95_avg_vals[gcm]:
+#                t95_avg_vals[gcm][sc] = {}
+#            for statn, t95_lists in sc_dicts.items():
+#                os.chdir(work_dir)
+#                os.chdir(gcm)
+#                os.chdir(sc)
+#                os.chdir(statn)
+#                if statn not in t95_avg_vals[gcm][sc]:
+#                    t95_avg_vals[gcm][sc][statn] = 0
+#                avg_t95 = reduce(lambda x, y: x + y[1], t95_lists, 0) / len(t95_lists)
+#    #            avg_t95 = sum(statn_lists)/len(statn_lists)
+#                t95vals_file = "t95_vals.txt"
+#                with open(t95vals_file, 'w') as f_t95:
+#                    f_t95.write(column_hdrs)
+#                    for t95_rpt_vals in t95_lists:
+#                        t95_str = str(gcm) + "\t" + str(sc) + "\t" + str(statn) + "\t" + str(t95_rpt_vals[0]) + "\t" + str(t95_rpt_vals[1]) + "\n"
+#                        f_t95.write(t95_str)
+#                t95avg_file = "t95_avg.txt"
+#                with open(t95avg_file, 'w') as f_avg:
+#                    f_avg.write(str(avg_t95))
+#                t95_avg_vals[gcm][sc][statn] = avg_t95
+#
+#os.chdir(work_dir)
+#with open('t95avg.pickle', 'wb') as f2:
+#    # Pickle the 'data' dictionary using the highest protocol available.
+#    pickle.dump(t95_avg_vals, f2, pickle.HIGHEST_PROTOCOL)              
+            
+q85 = {23013: 20.43701, 23034: 15.88674, 23076: 17.38945, 23079: 18.80663, 23083: 16.70065, 23090: 20.22939, 23096: 16.27108, 23343: 21.29063, 23356: 19.55889, 23360: 17.21413, 23361: 17.53178, 23709: 15.88951, 23721: 14.99353, 23727: 17.58149, 23731: 16.50847, 23734: 14.5062, 23741: 12.54033, 23743: 16.00799, 23756: 18.50957, 23758: 18.59812, 23761: 19.04404, 23783: 13.66098, 23806: 17.19725, 23817: 19.07595, 23820: 19.214, 23823: 16.23136, 23824: 15.71377}
+
+i = 0
+stat_vals = {}
+for time_series in data_files:
+    i = i + 1
+    os.chdir(work_dir)
+    # gcm
+    make_sure_path_exists(time_series[2])
+    os.chdir(time_series[2])
+    if time_series[2] not in stat_vals:
+        stat_vals[time_series[2]] = {}
+    #scenario
+    make_sure_path_exists(time_series[3])
+    os.chdir(time_series[3])
+    if time_series[3] not in stat_vals[time_series[2]]:
+        stat_vals[time_series[2]][time_series[3]] = {}
+    #station
+    make_sure_path_exists(time_series[4])
+    os.chdir(time_series[4])
+    if time_series[4] not in stat_vals[time_series[2]][time_series[3]]:
+        stat_vals[time_series[2]][time_series[3]][time_series[4]] = []
+    filename = "replicate_" + time_series[5] + "recalc2.txt"
+    msg = "Calculating EHF for " + time_series[2] + " " + time_series[3] + " " + time_series[4] + " replicate " + time_series[5] + "; file " + str(i) + " of " + str(num_files)
+    print(msg)
+    if (time_series[2] == "csiro.mk36"):
+        if (time_series[3] == "r85"):
+            this_stats = calcEHF_recalc2(time_series[0], filename, time_series[5], t95_avg_vals[time_series[2]][time_series[3]][time_series[4]], q85[int(time_series[4])])
+            if not stat_vals[time_series[2]][time_series[3]][time_series[4]]:
+                stat_vals[time_series[2]][time_series[3]][time_series[4]] = this_stats;
+            else:
+                stat_vals[time_series[2]][time_series[3]][time_series[4]] = combine_stat_dicts(stat_vals[time_series[2]][time_series[3]][time_series[4]], this_stats)
+       
+os.chdir(work_dir)
+
+with open('stat_vals2.pickle', 'wb') as f3:
+    # Pickle the 'data' dictionary using the highest protocol available.
+    pickle.dump(stat_vals, f3, pickle.HIGHEST_PROTOCOL) 
+
+
+files_by_year= {}
+for gcm, gcm_dicts in stat_vals.items():
+    if gcm not in files_by_year:
+        files_by_year[gcm] = {}
+    if (gcm == "csiro.mk36"):
+        for sc, sc_dicts in gcm_dicts.items(): 
+            if (sc == "r85"):
+                if sc not in files_by_year[gcm]:
+                    files_by_year[gcm][sc] = {}
+                for statn, stats in sc_dicts.items():
+                    
+                    os.chdir(work_dir)
+                    os.chdir(gcm)
+                    os.chdir(sc)
+                    os.chdir(statn)
+                    stats[:] = [x / 100 for x in stats]
+                    with open('yearly_avg_stats2.txt', 'w') as f_ystats:
+                        f_ystats.write("year\tsum_days_summer\tsum_days_autumn\tsum_days_winter\tsum_days_spring\tsum_ehf_summer\tsum_ehf_autumn\tsum_ehf_winter\tsum_ehf_spring\tmax_ehf_summer\tmax_ehf_autumn\tmax_ehf_winter\tmax_ehf_spring\ttot_days_in_summer\ttot_days_in_autumn\ttot_days_in_winter\ttot_days_in_spring\tprop_days_in_summer\tprop_days_in_autumn\tprop_days_in_winter\tprop_days_in_spring\tavg_ehf_summer\tavg_ehf_autumn\tavg_ehf_winter\tavg_ehf_spring\tsum_days\tsum_ehf\tmax_ehf\ttot_days\tprop_days\tavg_ehf\tlow\medium\thigh\n")
+                        for year, stat in stats.items:
+                            if year not in files_by_year[gcm][sc]:
+                                file_name = str(gcm) + "_" + str(sc) + "_" + str(year) + "2.txt"
+                                files_by_year[gcm][sc][year] = open(file_name, 'w')
+                                files_by_year[gcm][sc][year].write("station_id\tlat\tlong\tsum_days_summer\tsum_days_autumn\tsum_days_winter\tsum_days_spring\tsum_ehf_summer\tsum_ehf_autumn\tsum_ehf_winter\tsum_ehf_spring\tmax_ehf_summer\tmax_ehf_autumn\tmax_ehf_winter\tmax_ehf_spring\ttot_days_in_summer\ttot_days_in_autumn\ttot_days_in_winter\ttot_days_in_spring\tprop_days_in_summer\tprop_days_in_autumn\tprop_days_in_winter\tprop_days_in_spring\tavg_ehf_summer\tavg_ehf_autumn\tavg_ehf_winter\tavg_ehf_spring\tsum_days\tsum_ehf\tmax_ehf\ttot_days\tprop_days\tavg_ehf\tlow\medium\thigh\n")
+                            f_ystats.write(str(year)+"\t")
+                            files_by_year[gcm][sc][year].write(str(statn) +"\t"+str(stations[statn][1]) +"\t"+str(stations[statn][2]) )
+                            for i in range(0, 33): 
+                                f_ystats.write(str(stat[i]) + "\t")
+                                files_by_year[gcm][sc][year].write(str(stat[i]) + "\t")
+                            f_ystats.write("\n")
+                            files_by_year[gcm][sc][year].write("\n")
+
+
+                
+
+# print data
+
+
+        
+os.chdir(cwd)
+
+with open('t95vals2.pickle', 'wb') as f:
+    # Pickle the 'data' dictionary using the highest protocol available.
+    pickle.dump(t95_vals, f, pickle.HIGHEST_PROTOCOL)
+# raw = np.dtype([('id', np.str, 6), ('name', np.str, 48), ('x', np.float), ('y', np.float)])
+# raw_data = np.loadtxt(r"/Volumes/home/QNAP RTRR Folder/Data/South Australia Goyder-CSIRO downscaled future climates/StationList.txt", dtype=raw)
+    
+
+# 
+# 
+# stat_id_dict_fil = r"a_file"
+# 
+# path = "/Volumes/home/QNAP RTRR Folder/Projects/Heatwave risk mapping/RAW DATA/Adelaide Airport 23034/CanESM2#/CanESM2 #Historic data/amlr27.canesm2.his.23034.002.txt"
