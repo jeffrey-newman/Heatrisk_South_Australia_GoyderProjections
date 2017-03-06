@@ -1,7 +1,7 @@
 import os
 
 # os.environ['R_HOME'] = '/Users/a1091793/anaconda/lib/R'
-os.environ['R_HOME'] = '/Library/Frameworks/R.framework/Versions/3.3/Resources'
+# os.environ['R_HOME'] = '/Library/Frameworks/R.framework/Versions/3.3/Resources'
 
 import rpy2.robjects as robjects
 import rpy2.robjects.packages as rpackages
