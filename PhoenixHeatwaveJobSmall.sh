@@ -12,8 +12,11 @@ pwd; hostname; date
 
 echo "Running prime number generator program on $SLURM_JOB_NUM_NODES nodes with $SLURM_NTASKS tasks, each with $SLURM_CPUS_PER_TASK cores."
 
+module load GEOS/3.5.0-foss-2016uofa
+module load GDAL/2.1.0-foss-2016uofa
 module load Python/3.6.0-foss-2016uofa
 module load R/3.3.0-foss-2016uofa
-module load GDAL/2.1.0-foss-2016uofa
+
+
 
 mpirun -np 4 python "/home/a1091793/Code/HeatwaveAnalaysis/Heatrisk_South_Australia_GoyderProjections/ParallelHeatRiskAnalysis2Phoenix.py"
