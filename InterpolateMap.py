@@ -119,12 +119,12 @@ readogr = robjects.r['readOGR']
 sink = robjects.r['sink']
 
 
-mask_dir = r"/Volumes/Samsung_T3/heatwave"
+mask_dir = r"/fast/users/a1091793/Heatwave"
 mask_layer = "SA"
 mask = readogr(mask_dir, mask_layer)
 
 def interpolateAndMap(timeslice_info):
-    os.environ['R_HOME'] = '/Library/Frameworks/R.framework/Versions/3.3/Resources'
+    # os.environ['R_HOME'] = '/Library/Frameworks/R.framework/Versions/3.3/Resources'
     msg = "Interpolating map"
     print (msg, timeslice_info)
     os.chdir(timeslice_info[3])
