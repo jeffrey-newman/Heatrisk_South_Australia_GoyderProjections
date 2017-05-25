@@ -29,9 +29,6 @@ import xlsxwriter
 
 # WHAT MAKES THIS FILE DIFFERENCE FROM EHFRecalc?
 
-
-def
-
 def calcEHF(file_path, filename_calcs, t95, filename_ehfs):
     # Year, Month, Day, Weather State (you probably won’t use this), Rainfall (mm), Tmax (oC), Tmin (oC), Short wave solar radiation (MJ/m2), Vapour Pressure Deficit (hPa), Morton’s APET (mm).
     raw = np.dtype([('year', np.uint), ('month', np.uint), ('day', np.uint), ('wState', np.uint), ('rain', np.float_),
