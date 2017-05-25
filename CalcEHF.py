@@ -29,6 +29,9 @@ import xlsxwriter
 
 # WHAT MAKES THIS FILE DIFFERENCE FROM EHFRecalc?
 
+
+def
+
 def calcEHF(file_path, filename_calcs, t95, filename_ehfs):
     # Year, Month, Day, Weather State (you probably won’t use this), Rainfall (mm), Tmax (oC), Tmin (oC), Short wave solar radiation (MJ/m2), Vapour Pressure Deficit (hPa), Morton’s APET (mm).
     raw = np.dtype([('year', np.uint), ('month', np.uint), ('day', np.uint), ('wState', np.uint), ('rain', np.float_),
@@ -36,7 +39,9 @@ def calcEHF(file_path, filename_calcs, t95, filename_ehfs):
                     ('apet', np.float_)])
     calced = np.dtype(
         [('dmt', np.float_), ('3day', np.float_), ('30day', np.float_), ('EHI_sig', np.float_), ('EHI_accl', np.float_),
-         ('EHF', np.float_), ('EHF_respec', np.float_), ('Heatwave_day', np.uint), ('Severity', np.float_), ('low', np.uint), ('medium', np.uint), ('high', np.uint)])
+         ('EHF', np.float_), ('EHF_respec', np.float_), ('Heatwave_day', np.uint), ('EHF_12day_sum', np.float_),
+         ('EHF_12day_max', np.float_), ('RF_cat0', np.uint), ('RF_cat1', np.uint), ('RF_cat2', np.uint), ('RF_cat3', np.uint),
+         ('RF_cat4', np.uint), ('RF_fatalityrate', np.float_), ('Severity', np.float_), ('low', np.uint), ('medium', np.uint), ('high', np.uint)])
     dt = np.dtype([('raw', raw), ('calced', calced)])
 
 
@@ -65,8 +70,8 @@ def calcEHF(file_path, filename_calcs, t95, filename_ehfs):
 
         # Calculate thirty day averages
         cd['30day'] = 0
-        if (index > 28):
-            for i in range(index - 29, index + 1):
+        if (index > 31):
+            for i in range(index - 32, index - 2):
                 cd['30day'] += data[i]['calced']['dmt']
             cd['30day'] /= 30
 
@@ -80,6 +85,11 @@ def calcEHF(file_path, filename_calcs, t95, filename_ehfs):
 
     heat_wave_ehfs = []
 
+    in_heatwave = False;
+    day_of_peak_heatwave = -1
+    max_ehf = 0
+    max_sum_ehf = 0
+    day_of_start_heatwave = -1
     # Calculate EHI_sig
     # load raw data into amalgamated data array
     it = np.nditer(data, flags=['f_index'])
@@ -97,26 +107,72 @@ def calcEHF(file_path, filename_calcs, t95, filename_ehfs):
         else:
             cd['EHI_sig'] = 0
 
-        if (index > 28):
+        cd['EHI_accl'] = 0
+        cd['EHF'] = 0
+        cd['EHF_respec'] = 0
+        cd['EHF_12day_sum'] = 0;
+        cd['EHF_12day_max'] = 0;
+        if (index > 31):
             cd['EHI_accl'] = cd['3day'] - cd['30day']
             cd['EHF'] = cd['EHI_sig'] * max(1, cd['EHI_accl'])
             cd['EHF_respec'] = max(0, cd['EHI_sig']) * max(1, cd['EHI_accl'])
             if (cd['EHF_respec'] > 0):
                 heat_wave_ehfs.append(cd['EHF_respec'])
-        else:
-            cd['EHI_accl'] = 0
-            cd['EHF'] = 0
-            cd['EHF_respec'] = 0
+            # Calculate the 12 day avg and max for death statistics
+            if (index == 11):
+                for i in range(index - 11, index + 1):
+                    cd['EHF_12day_sum'] += data[i]['calced']['EHF_respec']
+            if (index > 11):
+                cd['EHF_12day_sum'] = data[index - 1]['calced']['EHF_12day_sum'] + cd['EHF_respec'] - data[index - 11]['calced']['EHF_12day_sum']
 
-        # cd['Heatwave_day'] = 0
+
+        cd['RF_cat0'] = 0
+        cd['RF_cat1'] = 0
+        cd['RF_cat2'] = 0
+        cd['RF_cat3'] = 0
+        cd['RF_cat4'] = 0
+        cd['RF_fatalityrate'] = 0
+
+        if (cd['EHF_respec'] > 0 and in_heatwave == False):
+            in_heatwave = True
+            day_of_start_heatwave = index
+
+        if (cd['EHF_respec'] <= 0 and in_heatwave == True):
+            #we are at the end of a heatwave event.
+            for i in range(day_of_start_heatwave, index + 1):
+                if (data[i]['calced']['EHF'] > max_ehf):
+                    max_ehf = data[i]['calced']['EHF']
+                    day_of_peak_heatwave = i
+            for i in range(day_of_peak_heatwave, day_of_peak_heatwave + 12):
+                if (data[i]['calced']['EHF_12day_sum'] > max_sum_ehf):
+                    max_sum_ehf = data[i]['calced']['EHF_12day_sum']
+            if (max_sum_ehf > 300 and max_ehf > 70):
+                data[day_of_peak_heatwave]['calced']['RF_cat4'] = 1
+                data[day_of_peak_heatwave]['calced']['RF_fatalityrate'] = 1.7
+            elif (max_sum_ehf > 150 and max_ehf > 50):
+                data[day_of_peak_heatwave]['calced']['RF_cat3'] = 1
+                data[day_of_peak_heatwave]['calced']['RF_fatalityrate'] = 0.2
+            elif (max_sum_ehf > 80 and max_ehf > 30):
+                data[day_of_peak_heatwave]['calced']['RF_cat2'] = 1
+                data[day_of_peak_heatwave]['calced']['RF_fatalityrate'] = 0.1
+            elif (max_sum_ehf > 30 and max_ehf > 15):
+                data[day_of_peak_heatwave]['calced']['RF_cat1'] = 1
+                data[day_of_peak_heatwave]['calced']['RF_fatalityrate'] = 0.05
+            else:
+                data[day_of_peak_heatwave]['calced']['RF_cat0'] = 1
+                data[day_of_peak_heatwave]['calced']['RF_fatalityrate'] = 0
+            in_heatwave = False
+            max_ehf = 0
+            day_of_start_heatwave = -1
+            day_of_peak_heatwave = -1
+            max_sum_ehf = 0
 
         # print index
         it.iternext()
-
-    cd['Heatwave_day'] = 0
-    cd['low'] = 0
-    cd['medium'] = 0
-    cd['high'] = 0
+        cd['Heatwave_day'] = 0
+        cd['low'] = 0
+        cd['medium'] = 0
+        cd['high'] = 0
 
 
     with open(filename_calcs, "wb") as f:

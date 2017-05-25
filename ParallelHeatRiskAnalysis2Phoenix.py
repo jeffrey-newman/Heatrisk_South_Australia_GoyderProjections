@@ -271,7 +271,7 @@ def processAccumulateStats(statn_info):
 
 # Now for the script which integrates the calculation.
 station_list = r"/fast/users/a1091793/Heatwave/StationList.txt"
-rootdir = r"/fast/users/a1091793/Heatwave/Subset"
+rootdir = r"/fast/users/a1091793/Heatwave/Goyder_Climate_Futures_Sorted_Timeseries_SA/Sorted"
 work_dir = r"/fast/users/a1091793/Heatwave/Processed"
 
 

@@ -22,9 +22,16 @@ def calcStatistics(filename_ehf_calc_data, q85, file_stats_yearly, file_stats_ac
     raw = np.dtype([('year', np.uint), ('month', np.uint), ('day', np.uint), ('wState', np.uint), ('rain', np.float_),
                     ('maxT', np.float_), ('minT', np.float_), ('srad', np.float_), ('pres', np.float_),
                     ('apet', np.float_)])
+    # calced = np.dtype(
+    #     [('dmt', np.float_), ('3day', np.float_), ('30day', np.float_), ('EHI_sig', np.float_), ('EHI_accl', np.float_),
+    #      ('EHF', np.float_), ('EHF_respec', np.float_), ('Heatwave_day', np.uint), ('Severity', np.float_), ('low', np.uint), ('medium', np.uint), ('high', np.uint)])
     calced = np.dtype(
         [('dmt', np.float_), ('3day', np.float_), ('30day', np.float_), ('EHI_sig', np.float_), ('EHI_accl', np.float_),
-         ('EHF', np.float_), ('EHF_respec', np.float_), ('Heatwave_day', np.uint), ('Severity', np.float_), ('low', np.uint), ('medium', np.uint), ('high', np.uint)])
+         ('EHF', np.float_), ('EHF_respec', np.float_), ('Heatwave_day', np.uint), ('EHF_12day_sum', np.float_),
+         ('EHF_12day_max', np.float_), ('RF_cat0', np.uint), ('RF_cat1', np.uint), ('RF_cat2', np.uint),
+         ('RF_cat3', np.uint),
+         ('RF_cat4', np.uint), ('RF_fatalityrate', np.float_), ('Severity', np.float_), ('low', np.uint),
+         ('medium', np.uint), ('high', np.uint)])
     dt = np.dtype([('raw', raw), ('calced', calced)])
 
     with open(filename_ehf_calc_data, "rb") as f:
@@ -64,6 +71,7 @@ def calcStatistics(filename_ehf_calc_data, q85, file_stats_yearly, file_stats_ac
     num_mod_days = 0  # 31
     num_high_days = 0  # 32
     avg_dmt = 0 # 33
+    sum_fatality_rate = 0 #34
     yearly_stats = {}
 
     # load raw data into amalgamated data array
@@ -98,13 +106,15 @@ def calcStatistics(filename_ehf_calc_data, q85, file_stats_yearly, file_stats_ac
 
         year = rd['year']
         if year not in yearly_stats:
-            yearly_stats[year] = [0.0] * 34
+            yearly_stats[year] = [0.0] * 35
         month = rd['month']
 
         yearly_stats[year][33] += cd['dmt']
         avg_dmt += cd['dmt']
         tot_days += 1
         yearly_stats[year][27] += 1
+        yearly_stats[year][34] += cd['RF_fatalityrate']
+        sum_fatality_rate += cd['RF_fatalityrate']
 
         if (cd['EHF_respec'] > 0):
             sum_ehf += cd['EHF_respec']
@@ -273,20 +283,21 @@ def calcStatistics(filename_ehf_calc_data, q85, file_stats_yearly, file_stats_ac
         f_stats.write("days_medium\t" + str(num_mod_days) + "\n")
         f_stats.write("days_high\t" + str(num_high_days) + "\n")
         f_stats.write("avg_dmt\t" + str(avg_dmt) + "\n")
+        f_stats.write("sum_fatality_rate\t" + str(sum_fatality_rate) + "\n")
 
-    stats = [sum_days_summer, sum_days_autumn, sum_days_winter, sum_days_spring, sum_ehf_summer, sum_ehf_autumn,
-             sum_ehf_winter, sum_ehf_spring, max_ehf_summer, max_ehf_autumn, max_ehf_winter, max_ehf_spring,
-             tot_days_in_summer, tot_days_in_autumn, tot_days_in_winter, tot_days_in_spring, prop_days_in_summer,
-             prop_days_in_autumn, prop_days_in_winter, prop_days_in_spring, avg_ehf_summer, avg_ehf_autumn, avg_ehf_winter,
-             avg_ehf_spring, sum_days, sum_ehf, max_ehf, tot_days, prop_days, avg_ehf, num_low_days, num_mod_days,
-             num_high_days,avg_dmt]
+    # stats = [sum_days_summer, sum_days_autumn, sum_days_winter, sum_days_spring, sum_ehf_summer, sum_ehf_autumn,
+    #          sum_ehf_winter, sum_ehf_spring, max_ehf_summer, max_ehf_autumn, max_ehf_winter, max_ehf_spring,
+    #          tot_days_in_summer, tot_days_in_autumn, tot_days_in_winter, tot_days_in_spring, prop_days_in_summer,
+    #          prop_days_in_autumn, prop_days_in_winter, prop_days_in_spring, avg_ehf_summer, avg_ehf_autumn, avg_ehf_winter,
+    #          avg_ehf_spring, sum_days, sum_ehf, max_ehf, tot_days, prop_days, avg_ehf, num_low_days, num_mod_days,
+    #          num_high_days,avg_dmt,sum_fatality_rate]
 
     with open(file_stats_yearly, 'w') as f_ystats:
         f_ystats.write(
-            "year\tsum_days_summer\tsum_days_autumn\tsum_days_winter\tsum_days_spring\tsum_ehf_summer\tsum_ehf_autumn\tsum_ehf_winter\tsum_ehf_spring\tmax_ehf_summer\tmax_ehf_autumn\tmax_ehf_winter\tmax_ehf_spring\ttot_days_in_summer\ttot_days_in_autumn\ttot_days_in_winter\ttot_days_in_spring\tprop_days_in_summer\tprop_days_in_autumn\tprop_days_in_winter\tprop_days_in_spring\tavg_ehf_summer\tavg_ehf_autumn\tavg_ehf_winter\tavg_ehf_spring\tsum_days\tsum_ehf\tmax_ehf\ttot_days\tprop_days\tavg_ehf\tlow\tmedium\thigh\tavgDMT\n")
+            "year\tsum_days_summer\tsum_days_autumn\tsum_days_winter\tsum_days_spring\tsum_ehf_summer\tsum_ehf_autumn\tsum_ehf_winter\tsum_ehf_spring\tmax_ehf_summer\tmax_ehf_autumn\tmax_ehf_winter\tmax_ehf_spring\ttot_days_in_summer\ttot_days_in_autumn\ttot_days_in_winter\ttot_days_in_spring\tprop_days_in_summer\tprop_days_in_autumn\tprop_days_in_winter\tprop_days_in_spring\tavg_ehf_summer\tavg_ehf_autumn\tavg_ehf_winter\tavg_ehf_spring\tsum_days\tsum_ehf\tmax_ehf\ttot_days\tprop_days\tavg_ehf\tlow\tmedium\thigh\tavgDMT\tsum_fatality_rate\n")
         for year, stats in yearly_stats.items():
             f_ystats.write(str(year) + "\t")
-            for i in range(0, 34):
+            for i in range(0, 35):
                 f_ystats.write(str(stats[i]) + "\t")
             f_ystats.write("\n")
 
