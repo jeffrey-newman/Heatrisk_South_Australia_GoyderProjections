@@ -67,9 +67,12 @@ def calcEHF(file_path, filename_calcs, t95, filename_ehfs):
 
         # Calculate thirty day averages
         cd['30day'] = 0
-        if (index > 31):
+        if (index == 32):
             for i in range(index - 32, index - 2):
                 cd['30day'] += data[i]['calced']['dmt']
+            cd['30day'] /= 30
+        if (index > 32):
+            cd['30day'] = data[index - 1]['calced']['30day'] * 30 - data[index - 33]['calced']['dmt'] + data[index - 3]['calced']['dmt']
             cd['30day'] /= 30
 
         # print index
@@ -116,11 +119,11 @@ def calcEHF(file_path, filename_calcs, t95, filename_ehfs):
             if (cd['EHF_respec'] > 0):
                 heat_wave_ehfs.append(cd['EHF_respec'])
             # Calculate the 12 day avg and max for death statistics
-            if (index == 11):
+            if (index == 43):
                 for i in range(index - 11, index + 1):
                     cd['EHF_12day_sum'] += data[i]['calced']['EHF_respec']
-            if (index > 11):
-                cd['EHF_12day_sum'] = data[index - 1]['calced']['EHF_12day_sum'] + cd['EHF_respec'] - data[index - 11]['calced']['EHF_12day_sum']
+            if (index > 43):
+                cd['EHF_12day_sum'] = data[index - 1]['calced']['EHF_12day_sum'] + cd['EHF_respec'] - data[index - 12]['calced']['EHF_respec']
 
 
         cd['RF_cat0'] = 0
