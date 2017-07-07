@@ -112,22 +112,26 @@ def recv(num_recvs, data, funct):
 # data is a collection - each item is sent to a worker
 # workers is the size of the worker pool
 # funct is applied to the received results
-def distributeTask(workers, data, funct):
+def distributeTask(workers, data, funct, task_name):
     num_sends = 0
     num_datums = len(data)
+    sent_jobs_count = 0
 
     for idx in range(workers):
         to_id = idx + 1
         num_sends = send(num_sends, data, to_id)
+        print("Sent " + task_name + " job " + num_sends + " of " + num_datums)
 
     num_recvs = 0
     for idx in range(workers):
         num_recvs, from_id = recv(num_recvs, data, funct)
         num_sends = send(num_sends, data, from_id)
+        print("Sending " + task_name + " job " + num_sends + " of " + num_datums)
 
     while num_recvs < num_datums:
         num_recvs, from_id = recv(num_recvs, data, funct)
         num_sends = send(num_sends, data, from_id)
+        print("Sending " + task_name + " job " + num_sends + " of " + num_datums)
 
 
 # postprocess the intial EHF calculations. Store the t95 values for each timeseries in a dict
@@ -273,6 +277,23 @@ def processAccumulateStats(statn_info):
 station_list = r"/fast/users/a1091793/Heatwave/StationList.txt"
 rootdir = r"/fast/users/a1091793/Heatwave/Goyder_Climate_Futures_Sorted_Timeseries_SA/Sorted"
 work_dir = r"/fast/users/a1091793/Heatwave/Processed"
+
+
+if rank == 0:
+    os.chdir(work_dir)
+    stations = readStationList(station_list)
+    data_files = listRawDataFiles(rootdir, stations)
+    with open('stations.pickle', 'wb') as f1:
+        # Pickle the 'data' dictionary using the highest protocol available.
+        pickle.dump(stations, f, pickle.HIGHEST_PROTOCOL)
+    with open('data_files.pickle', 'wb') as f2:
+        # Pickle the 'data' dictionary using the highest protocol available.
+        pickle.dump(data_files, f, pickle.HIGHEST_PROTOCOL)
+
+# if rank == 0:
+#     os.chdir(work_dir)
+#     stations = pickle.load('stations.pickle')
+#     data_files = pickle.load('data_files.pickle')
 
 ##################################################################################
 #####     CALCULATING DMT and t95 completed in first run of code
