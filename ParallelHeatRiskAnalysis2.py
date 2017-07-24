@@ -17,6 +17,8 @@ workers = num_processes - 1
 rank = comm.rank        # rank of this process
 status = MPI.Status()   # get MPI status object
 
+
+
 # import imp
 # import ReadStationList
 from ReadStationList import readStationList
@@ -37,6 +39,7 @@ from AggregateStats import aggregateStats
 from CreateShapeFile import print2shape
 from CalcStatistics import calcStatistics
 from InterpolateMap import interpolateAndMap
+
 
 t95_vals = {}
 t95_avg_vals = {}
@@ -111,22 +114,26 @@ def recv(num_recvs, data, funct):
 # data is a collection - each item is sent to a worker
 # workers is the size of the worker pool
 # funct is applied to the received results
-def distributeTask(workers, data, funct):
+def distributeTask(workers, data, funct, task_name):
     num_sends = 0
     num_datums = len(data)
+    sent_jobs_count = 0
 
     for idx in range(workers):
         to_id = idx + 1
         num_sends = send(num_sends, data, to_id)
+        print("Sent " + task_name + " job " + num_sends + " of " + num_datums)
 
     num_recvs = 0
     for idx in range(workers):
         num_recvs, from_id = recv(num_recvs, data, funct)
         num_sends = send(num_sends, data, from_id)
+        print("Sending " + task_name + " job " + num_sends + " of " + num_datums)
 
     while num_recvs < num_datums:
         num_recvs, from_id = recv(num_recvs, data, funct)
         num_sends = send(num_sends, data, from_id)
+        print("Sending " + task_name + " job " + num_sends + " of " + num_datums)
 
 
 # postprocess the intial EHF calculations. Store the t95 values for each timeseries in a dict
@@ -274,31 +281,50 @@ rootdir = r"/Volumes/Samsung_T3/heatwave/Subset"
 work_dir = r"/Volumes/Samsung_T3/heatwave/Processed"
 
 
-# Calculate daily mean temperature
 if rank == 0:
     os.chdir(work_dir)
     stations = readStationList(station_list)
     data_files = listRawDataFiles(rootdir, stations)
-    ## For each timeseries, calculate EHF
-    distributeTask(workers, data_files, processCalcDailyMeanTemp)
-    with open('dmt.pickle', 'wb') as f:
+    with open('stations.pickle', 'wb') as f1:
         # Pickle the 'data' dictionary using the highest protocol available.
-        pickle.dump(t95_vals, f, pickle.HIGHEST_PROTOCOL)
-else:
-    receiveTasks(calcDailyMeanTempjob)
+        pickle.dump(stations, f1, pickle.HIGHEST_PROTOCOL)
+    with open('data_files.pickle', 'wb') as f2:
+        # Pickle the 'data' dictionary using the highest protocol available.
+        pickle.dump(data_files, f2, pickle.HIGHEST_PROTOCOL)
 
-# Calculate the t95 value for each station (zone, gcm, scenario treated separately)
-if rank == 0:
-    os.chdir(work_dir)
-    station_dict = getStationDict(t95_vals)
-    distributeTask(workers, station_dict, processCalcT95)
-    for time_series in data_files:
-        time_series.append(t95_avg_vals[time_series[1]][time_series[2]][time_series[3]][time_series[7]])
-    with open('t95.pickle', 'wb') as f:
-        # Pickle the 'data' dictionary using the highest protocol available.
-        pickle.dump(t95_avg_vals, f, pickle.HIGHEST_PROTOCOL)
-else:
-    receiveTasks(calct95ForStation)
+# if rank == 0:
+#     os.chdir(work_dir)
+#     stations = pickle.load('stations.pickle')
+#     data_files = pickle.load('data_files.pickle')
+
+##################################################################################
+#####     CALCULATING DMT and t95 completed in first run of code
+##################################################################################
+# # Calculate daily mean temperature
+# if rank == 0:
+#     os.chdir(work_dir)
+#     stations = readStationList(station_list)
+#     data_files = listRawDataFiles(rootdir, stations)
+#     ## For each timeseries, calculate EHF
+#     distributeTask(workers, data_files, processCalcDailyMeanTemp)
+#     with open('dmt.pickle', 'wb') as f:
+#         # Pickle the 'data' dictionary using the highest protocol available.
+#         pickle.dump(t95_vals, f, pickle.HIGHEST_PROTOCOL)
+# else:
+#     receiveTasks(calcDailyMeanTempjob)
+#
+# # Calculate the t95 value for each station (zone, gcm, scenario treated separately)
+# if rank == 0:
+#     os.chdir(work_dir)
+#     station_dict = getStationDict(t95_vals)
+#     distributeTask(workers, station_dict, processCalcT95)
+#     for time_series in data_files:
+#         time_series.append(t95_avg_vals[time_series[1]][time_series[2]][time_series[3]][time_series[7]])
+#     with open('t95.pickle', 'wb') as f:
+#         # Pickle the 'data' dictionary using the highest protocol available.
+#         pickle.dump(t95_avg_vals, f, pickle.HIGHEST_PROTOCOL)
+# else:
+#     receiveTasks(calct95ForStation)
 
 # Calcualate the EHF.
 if rank == 0:

@@ -49,15 +49,9 @@ r_gpd_ehf2 = robjects.r('''
 
 # res = r_gpd_ehf(r"/Volumes/home/QNAP RTRR Folder/Data/South Australia Goyder-CSIRO downscaled future climates/Adelaide_Mt_Lofty_Ranges/Processed/csiro.mk36/his/23013/heat_wave_ehfs.txt")
 
-def CalcQ85FromGPDOfEHF(statn_info):
+def CalcQ85FromGPDOfEHFv2(statn_info):
     # dmt_vals = np.zeros(0)
     # print(statn_info)
-    os.chdir(statn_info[0])
-    os.chdir(statn_info[1])
-    os.chdir(statn_info[2])
-    os.chdir(statn_info[3])
-    os.chdir(statn_info[4])
-
     all_ehfs = []
 
     for subdir, dirs, files in os.walk(os.getcwd()):
@@ -71,7 +65,29 @@ def CalcQ85FromGPDOfEHF(statn_info):
 
     all_ehfs_Rvec = robjects.FloatVector(all_ehfs)
     res = r_gpd_ehf2(all_ehfs_Rvec)
-    statn_info.append(res[2])
-    statn_info.append(res[1])
-    statn_info.append(res[0])
+    statn_info.append(res[2]) # value of beta
+    statn_info.append(res[1]) # value of xi
+    statn_info.append(res[0]) # value of qppd85
+
+    with open('qgpd85.pickle', 'wb') as f:
+        pickle.dump(statn_info, f, pickle.HIGHEST_PROTOCOL)
     return statn_info
+
+
+def CalcQ85FromGPDOfEHF(statn_info):
+    os.chdir(statn_info[0])
+    os.chdir(statn_info[1])
+    os.chdir(statn_info[2])
+    os.chdir(statn_info[3])
+    os.chdir(statn_info[4])
+
+    if os.path.isfile('qgpd85.pickle'):
+        try:
+            with open ('qgpd85.pickle', 'rb') as f:
+                previous_calced_val = pickle.load(f)
+                return previous_calced_val
+        except:
+            return CalcQ85FromGPDOfEHFv2(statn_info)
+    else:
+        return CalcQ85FromGPDOfEHFv2(statn_info)
+

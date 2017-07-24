@@ -2,14 +2,9 @@ import os
 import numpy as np
 import pickle
 
-def calct95ForStation(statn_info):
+def calct95ForStationv2(statn_info):
     dmt_vals = np.zeros(0)
     # print(statn_info)
-    os.chdir(statn_info[0])
-    os.chdir(statn_info[1])
-    os.chdir(statn_info[2])
-    os.chdir(statn_info[3])
-    os.chdir(statn_info[4])
 
     for subdir, dirs, files in os.walk(os.getcwd()):
         for file in files:
@@ -32,4 +27,25 @@ def calct95ForStation(statn_info):
     with open(t95avg_file, 'w') as f_avg:
         f_avg.write(str(avg_t95))
     statn_info.append(avg_t95)
+    with open('t95_avg.pickle', 'wb') as f:
+        pickle.dump(statn_info, f, pickle.HIGHEST_PROTOCOL)
     return statn_info
+
+def calct95ForStation(statn_info):
+    os.chdir(statn_info[0])
+    os.chdir(statn_info[1])
+    os.chdir(statn_info[2])
+    os.chdir(statn_info[3])
+    os.chdir(statn_info[4])
+
+    if os.path.isfile('t95_avg.pickle'):
+        try:
+            with open ('t95_avg.pickle', 'rb') as f:
+                previous_calced_val = pickle.load(f)
+                return previous_calced_val
+        except:
+            return calct95ForStationv2(statn_info)
+    else:
+        return calct95ForStationv2(statn_info)
+
+

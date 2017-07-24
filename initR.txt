@@ -1,0 +1,4 @@
+OGR data source with driver: ESRI Shapefile 
+Source: "/Users/a1091793/Documents/Projects/Heatwave risk South Australia Goyder Projections", layer: "SA"
+with 1 features
+It has 5 fields

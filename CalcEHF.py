@@ -13,6 +13,7 @@ Created on Tue Aug 16 16:36:40 2016
 """
 
 # -*- coding: utf-8 -*-
+import os
 import numpy as np
 import pickle
 # import scipy.stats as ss
@@ -29,7 +30,7 @@ import xlsxwriter
 
 # WHAT MAKES THIS FILE DIFFERENCE FROM EHFRecalc?
 
-def calcEHF(file_path, filename_calcs, t95, filename_ehfs):
+def calcEHFv2(file_path, filename_calcs, t95, filename_ehfs):
     # Year, Month, Day, Weather State (you probably won’t use this), Rainfall (mm), Tmax (oC), Tmin (oC), Short wave solar radiation (MJ/m2), Vapour Pressure Deficit (hPa), Morton’s APET (mm).
     raw = np.dtype([('year', np.uint), ('month', np.uint), ('day', np.uint), ('wState', np.uint), ('rain', np.float_),
                     ('maxT', np.float_), ('minT', np.float_), ('srad', np.float_), ('pres', np.float_),
@@ -180,3 +181,14 @@ def calcEHF(file_path, filename_calcs, t95, filename_ehfs):
 
     with open (filename_ehfs, "wb") as f:
         pickle.dump(heat_wave_ehfs, f, pickle.HIGHEST_PROTOCOL)
+
+
+def calcEHF(file_path, filename_calcs, t95, filename_ehfs):
+    if os.path.isfile(filename_ehfs):
+        try:
+            with open (filename_ehfs, 'rb') as f:
+                previous_calced_val = pickle.load(f)
+        except:
+            calcEHFv2(file_path, filename_calcs, t95, filename_ehfs)
+    else:
+        calcEHFv2(file_path, filename_calcs, t95, filename_ehfs)

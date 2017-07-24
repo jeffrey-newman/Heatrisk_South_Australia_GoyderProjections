@@ -15,14 +15,7 @@ def combine_stat_dicts(a, b):
         combined[year] = new_stats
     return combined
 
-def aggregateStats(statn_info):
-
-    os.chdir(statn_info[0])
-    os.chdir(statn_info[1])
-    os.chdir(statn_info[2])
-    os.chdir(statn_info[3])
-    os.chdir(statn_info[4])
-
+def aggregateStatsv2(statn_info):
     agg_stats = None
     num_replicates = 0
 
@@ -49,6 +42,7 @@ def aggregateStats(statn_info):
 
     statn_info.append(agg_stats)
     return statn_info
+
 
 def aggregateStatsTest(dir):
     agg_stats = None
@@ -79,3 +73,19 @@ def aggregateStatsTest(dir):
 
     return agg_stats
 
+
+def aggregateStats(statn_info):
+    os.chdir(statn_info[0])
+    os.chdir(statn_info[1])
+    os.chdir(statn_info[2])
+    os.chdir(statn_info[3])
+    os.chdir(statn_info[4])
+    if os.path.isfile('aggregated_stats.pickle'):
+        try:
+            with open ('aggregated_stats.pickle', 'rb') as f:
+                previous_calced_val = pickle.load(f)
+                return previous_calced_val
+        except:
+            return aggregateStatsv2(statn_info)
+    else:
+        return aggregateStatsv2(statn_info)

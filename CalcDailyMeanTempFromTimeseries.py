@@ -3,8 +3,9 @@ import numpy as np
 # import scipy.stats as ss
 # import scipy as sp
 import pickle
+import os
 
-def calcDailyMeanTemp(file_path, path_out_dmt, path_out_t95):
+def calcDailyMeanTempv2(file_path, path_out_dmt, path_out_t95, t95_pickle_file_name):
     # Year, Month, Day, Weather State (you probably won’t use this), Rainfall (mm), Tmax (oC), Tmin (oC), Short wave solar radiation (MJ/m2), Vapour Pressure Deficit (hPa), Morton’s APET (mm).
     raw = np.dtype([('year', np.uint), ('month', np.uint), ('day', np.uint), ('wState', np.uint),('rain', np.float_), ('maxT', np.float_), ('minT', np.float_), ('srad', np.float_), ('pres', np.float_), ('apet', np.float_)])
     calced = np.dtype([('dmt', np.float_)])
@@ -50,6 +51,9 @@ def calcDailyMeanTemp(file_path, path_out_dmt, path_out_t95):
     t95 = np.percentile(daily_means, 95.0, overwrite_input=True)
     f_t95 = open(path_out_t95, 'w')
     f_t95.write(str(t95))
+
+    with open(t95_pickle_file_name, 'wb') as f_pcikle:
+        pickle.dump(t95, f_pcikle, pickle.HIGHEST_PROTOCOL)
 
     with open(path_out_dmt, 'wb') as f:
         pickle.dump(daily_means,f,pickle.HIGHEST_PROTOCOL)
@@ -114,3 +118,15 @@ def calcDailyMeanTemp(file_path, path_out_dmt, path_out_t95):
 
     return t95
     #c=ss.genpareto.fit(heat_wave_ehfs)
+
+
+def calcDailyMeanTemp(file_path, path_out_dmt, path_out_t95, t95_pickle_file_name):
+    if os.path.isfile(t95_pickle_file_name):
+        try:
+            with open (t95_pickle_file_name, 'rb') as f:
+                previous_calced_val = pickle.load(f)
+                return previous_calced_val
+        except:
+            return calcDailyMeanTempv2(file_path, path_out_dmt, path_out_t95, t95_pickle_file_name)
+    else:
+        return calcDailyMeanTempv2(file_path, path_out_dmt, path_out_t95, t95_pickle_file_name)

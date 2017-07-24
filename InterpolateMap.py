@@ -118,10 +118,14 @@ interpAndSave = robjects.r('''
 readogr = robjects.r['readOGR']
 sink = robjects.r['sink']
 
+sink("initR.txt", append=True)
 
 mask_dir = r"/fast/users/a1091793/Heatwave"
+# mask_dir = r"/fast/users/a1091793/Heatwave"
 mask_layer = "SA"
 mask = readogr(mask_dir, mask_layer)
+
+sink()
 
 def interpolateAndMap(timeslice_info):
     # os.environ['R_HOME'] = '/Library/Frameworks/R.framework/Versions/3.3/Resources'
@@ -136,41 +140,40 @@ def interpolateAndMap(timeslice_info):
     autokrig_pdf = base_file_name + "_autokrig.png"
     sink_file = base_file_name + "_sink.txt"
 
-    sink(sink_file)
-    data = loadAndTransformData(timeslice_info[3], timeslice_info[4])
-    grd = genGrid(data, sink_file)
 
-    fmla = robjects.Formula('avgEhfSmr ~ 1')
-    interpAndSave(fmla, data, grd, mask, file_name_idw_2, file_name_idw_3, file_name_krig, autokrig_pdf, sink_file)
+    if not os.path.isfile(autokrig_pdf):
+        sink(sink_file)
+        data = loadAndTransformData(timeslice_info[3], timeslice_info[4])
+        grd = genGrid(data, sink_file)
 
-
-    #
-    # doTheWork(timeslice_info[3], timeslice_info[4], fmla)
-    #
-    #
-    # data =
-    # range = robjects.r['range']
-    # coords = data.slots['coords']
-    # x_coords = coords.rx(True,1)
-    # y_coords = coords.rx(True,2)
-    # x_range = range(x_coords)
-    # y_range = range(y_coords)
-    # expand_grid = robjects.r['expand.grid']
-    # seq = robjects.r['seq']
-    # grd = expand_grid(x=seq(x_range[0], x_range[1], 0.005), y=seq(y_range[0], y_range[1], 0.005))
-    # grd2 = assigncoord(grd)
-    # # idw_cmd = robjects.r['idw']
-    #
-    #
-    #
-    #
-    # interpAndSave(fmla, data, grd2, file_name_idw_2, file_name_idw_3, file_name_krig, autokrig_pdf, sink_file)
-
-    rm = robjects.r['rm']
-    rm('data')
-    rm('grd')
-    rm('fmla')
-    sink()
+        fmla = robjects.Formula('avgEhfSmr ~ 1')
+        interpAndSave(fmla, data, grd, mask, file_name_idw_2, file_name_idw_3, file_name_krig, autokrig_pdf, sink_file)
+        #
+        # doTheWork(timeslice_info[3], timeslice_info[4], fmla)
+        #
+        #
+        # data =
+        # range = robjects.r['range']
+        # coords = data.slots['coords']
+        # x_coords = coords.rx(True,1)
+        # y_coords = coords.rx(True,2)
+        # x_range = range(x_coords)
+        # y_range = range(y_coords)
+        # expand_grid = robjects.r['expand.grid']
+        # seq = robjects.r['seq']
+        # grd = expand_grid(x=seq(x_range[0], x_range[1], 0.005), y=seq(y_range[0], y_range[1], 0.005))
+        # grd2 = assigncoord(grd)
+        # # idw_cmd = robjects.r['idw']
+        #
+        #
+        #
+        #
+        # interpAndSave(fmla, data, grd2, file_name_idw_2, file_name_idw_3, file_name_krig, autokrig_pdf, sink_file)
+        rm = robjects.r['rm']
+        rm('data')
+        rm('grd')
+        rm('fmla')
+        sink()
 
     return timeslice_info
 

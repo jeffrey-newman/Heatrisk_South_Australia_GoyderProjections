@@ -7,7 +7,7 @@ def readStationList(stationList_file):
     """
     Reads a 'blank' seperated text file with a list of stations with their corresponding coordinates.
     :param stationList_file: The file containing a list of stations with their coordinates
-    :return: An Python dict with stationa names mapped to their coordinates.revious
+    :return: is a dict with station id as the key, and with a list of values in this order: (0) station name, (1) longitude, and (2) latitude
     """
     statn_info = dict()
     for line in fileinput.input(stationList_file):

@@ -17,7 +17,7 @@ import numpy as np
 import pickle
 
 
-def calcStatistics(filename_ehf_calc_data, q85, file_stats_yearly, file_stats_accumulative, pickle_file):
+def calcStatisticsv2(filename_ehf_calc_data, q85, file_stats_yearly, file_stats_accumulative, pickle_file):
     # Year, Month, Day, Weather State (you probably won’t use this), Rainfall (mm), Tmax (oC), Tmin (oC), Short wave solar radiation (MJ/m2), Vapour Pressure Deficit (hPa), Morton’s APET (mm).
     raw = np.dtype([('year', np.uint), ('month', np.uint), ('day', np.uint), ('wState', np.uint), ('rain', np.float_),
                     ('maxT', np.float_), ('minT', np.float_), ('srad', np.float_), ('pres', np.float_),
@@ -305,5 +305,13 @@ def calcStatistics(filename_ehf_calc_data, q85, file_stats_yearly, file_stats_ac
         pickle.dump(yearly_stats, f, pickle.HIGHEST_PROTOCOL)
 
 
-
+def calcStatistics(filename_ehf_calc_data, q85, file_stats_yearly, file_stats_accumulative, pickle_file):
+    if os.path.isfile(pickle_file):
+        try:
+            with open (pickle_file, 'rb') as f:
+                previous_calced_val = pickle.load(f)
+        except:
+            calcStatisticsv2(filename_ehf_calc_data, q85, file_stats_yearly, file_stats_accumulative, pickle_file)
+    else:
+        calcStatisticsv2(filename_ehf_calc_data, q85, file_stats_yearly, file_stats_accumulative, pickle_file)
 
