@@ -119,9 +119,10 @@ readogr = robjects.r['readOGR']
 sink = robjects.r['sink']
 
 sink("initR.txt", append=True)
-
+# Phoenix
 mask_dir = r"/fast/users/a1091793/Heatwave"
-# mask_dir = r"/fast/users/a1091793/Heatwave"
+# Test
+# mask_dir = r"/Volumes/Samsung_T3/heatwaveTestDir"
 mask_layer = "SA"
 mask = readogr(mask_dir, mask_layer)
 

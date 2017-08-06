@@ -4,7 +4,7 @@ import errno
 import pickle
 import numpy
 # os.environ['R_HOME'] = '/Users/a1091793/anaconda/lib/R'
-# os.environ['R_HOME'] = '/Library/Frameworks/R.framework/Versions/3.3/Resources'
+os.environ['R_HOME'] = '/Library/Frameworks/R.framework/Versions/3.3/Resources'
 import rpy2.robjects as robjects
 import rpy2.robjects.packages as rpackages
 
@@ -60,7 +60,7 @@ def checkt95Dict(time_series, t95_vals):
 def getStationDefineDict(data_files):
     station_list = []
 
-    for file_info in data_files.items():
+    for file_info in data_files:
         zone = file_info[1]
         if zone not in t95_avg_vals:
             t95_avg_vals[zone] = {}
@@ -299,9 +299,15 @@ def processAccumulateStats(statn_info):
         pickle.dump(statn_info, f, pickle.HIGHEST_PROTOCOL)
 
 # Now for the script which integrates the calculation.
+
+#Phoenix
 station_list = r"/fast/users/a1091793/Heatwave/StationList.txt"
 rootdir = r"/fast/users/a1091793/Heatwave/Goyder_Climate_Futures_Sorted_Timeseries_SA/Sorted"
 work_dir = r"/fast/users/a1091793/Heatwave/Processed"
+#Testing
+# station_list = r"/Volumes/Samsung_T3/heatwaveTestDir/StationList.txt"
+# rootdir = r"/Volumes/Samsung_T3/heatwaveTestDir/StationList.txt"
+# work_dir = r"/Volumes/Samsung_T3/heatwaveTestDir/Subset"
 
 
 ##################################################################################
@@ -330,7 +336,7 @@ if rank == 0:
 #     data_files = pickle.load('data_files.pickle')
 
 ##################################################################################
-#####     Make a list of all statsions and the zones, gcm, scenarios.
+#####     Make a list of all stations and the zones, gcm, scenarios.
 ##################################################################################
 if rank == 0:
     os.chdir(work_dir)
@@ -350,7 +356,7 @@ if rank == 0:
 # # Calculate daily mean temperature
 if rank == 0:
     os.chdir(work_dir)
-    distributeTask(workers, data_files, processCalcDailyMeanTemp)
+    distributeTask(workers, data_files, processCalcDailyMeanTemp, "Calculating daily mean temperature")
     with open('dmt.pickle', 'wb') as f:
         # Pickle the 'data' dictionary using the highest protocol available.
         pickle.dump(t95_vals, f, pickle.HIGHEST_PROTOCOL)
@@ -368,7 +374,7 @@ else:
 # Calculate the t95 value for each station (zone, gcm, scenario treated separately)
 if rank == 0:
     os.chdir(work_dir)
-    distributeTask(workers, station_list, processCalcT95)
+    distributeTask(workers, station_list, processCalcT95, "Calculating t95")
     # processCalcT95 places the t95 value across each replicate into the t95_avg_val dict.
     for time_series in data_files:
         time_series.append(t95_avg_vals[time_series[1]][time_series[2]][time_series[3]][time_series[7]])
@@ -389,7 +395,7 @@ else:
 # Calcualate the EHF.
 if rank == 0:
     os.chdir(work_dir)
-    distributeTask(workers, data_files, processCalcEHF)
+    distributeTask(workers, data_files, processCalcEHF, "Calculating EHF")
 else:
     receiveTasks(calcEHFjob)
 
@@ -399,7 +405,7 @@ else:
 # Now we need to find the q85 point of the excess EHF data to calculate severity.
 if rank == 0:
     os.chdir(work_dir)
-    distributeTask(workers, station_list, processCalcQ85)
+    distributeTask(workers, station_list, processCalcQ85, "Calculating Q85")
     for time_series in data_files:
         time_series.append(q85_vals[time_series[1]][time_series[2]][time_series[3]][time_series[7]])
     with open('q85.pickle', 'wb') as f:
@@ -411,14 +417,14 @@ else:
 # Now we calculate statistics for each time_series.
 if rank == 0:
     os.chdir(work_dir)
-    distributeTask(workers, data_files, processCalcStatistics)
+    distributeTask(workers, data_files, processCalcStatistics, "Calculating Statistics")
 else:
     receiveTasks(calcStatisticsJob)
 
 #Now we calculated what the average statistics are across the replicates
 if rank == 0:
     os.chdir(work_dir)
-    distributeTask(workers, station_list, processAccumulateStats)
+    distributeTask(workers, station_list, processAccumulateStats, "Calculating Avg Statistics across replicates")
     for time_series in data_files:
         time_series.append(stat_vals[time_series[1]][time_series[2]][time_series[3]][time_series[7]][0])
         if not (stat_vals[time_series[1]][time_series[2]][time_series[3]][time_series[7]][-1] == True):
@@ -486,7 +492,7 @@ if rank == 0:
 
 if rank == 0:
     os.chdir(work_dir)
-    distributeTask(workers, space_domain_directories, processMapData)
+    distributeTask(workers, space_domain_directories, processMapData, "Interpolating and mapping")
 else:
     receiveTasks(interpolateAndMap)
 
