@@ -82,7 +82,7 @@ def getStationDefineDict(data_files):
             stat_vals[zone][gcm][sc] = {}
             # calced_status[zone][gcm][sc] = {}
 
-        stat = file_info[7]
+        statn = file_info[7]
         if statn not in t95_avg_vals[zone][gcm][sc]:
             t95_avg_vals[zone][gcm][sc][statn] = 0
             q85_vals[zone][gcm][sc][statn] = 0
