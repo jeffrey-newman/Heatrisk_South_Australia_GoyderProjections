@@ -148,18 +148,18 @@ def distributeTask(workers, data, funct, task_name):
     for idx in range(workers):
         to_id = idx + 1
         num_sends = send(num_sends, data, to_id)
-        print("Sent " + task_name + " job " + num_sends + " of " + num_datums)
+        print("Sent " + task_name + " job " + str(num_sends) + " of " + str(num_datums))
 
     num_recvs = 0
     for idx in range(workers):
         num_recvs, from_id = recv(num_recvs, data, funct)
         num_sends = send(num_sends, data, from_id)
-        print("Sending " + task_name + " job " + num_sends + " of " + num_datums)
+        print("Sending " + task_name + " job " + str(num_sends) + " of " + str(num_datums))
 
     while num_recvs < num_datums:
         num_recvs, from_id = recv(num_recvs, data, funct)
         num_sends = send(num_sends, data, from_id)
-        print("Sending " + task_name + " job " + num_sends + " of " + num_datums)
+        print("Sending " + task_name + " job " + str(num_sends) + " of " + str(num_datums))
 
 
 # Generic receive fuinction to receive a task at a worker. Takes a function that will be called on the received data

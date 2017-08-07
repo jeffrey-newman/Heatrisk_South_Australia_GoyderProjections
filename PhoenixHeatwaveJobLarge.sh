@@ -10,7 +10,7 @@
 
 pwd; hostname; date
 
-echo "Running prime number generator program on $SLURM_JOB_NUM_NODES nodes with $SLURM_NTASKS tasks, each with $SLURM_CPUS_PER_TASK cores."
+echo "Running Heatwave analysis program (v Large) on $SLURM_JOB_NUM_NODES nodes with $SLURM_NTASKS tasks, each with $SLURM_CPUS_PER_TASK cores."
 
 module load GEOS/3.5.0-foss-2016uofa
 module load GDAL/2.1.0-foss-2016uofa
