@@ -140,11 +140,13 @@ def calcEHFv2(file_path, filename_calcs, t95, filename_ehfs):
 
         if (cd['EHF_respec'] <= 0 and in_heatwave == True):
             #we are at the end of a heatwave event.
-            for i in range(day_of_start_heatwave, index + 1):
+            end_i = min(index +1, data.size)
+            for i in range(day_of_start_heatwave, end_i):
                 if (data[i]['calced']['EHF'] > max_ehf):
                     max_ehf = data[i]['calced']['EHF']
                     day_of_peak_heatwave = i
-            for i in range(day_of_peak_heatwave, day_of_peak_heatwave + 12):
+            end_i = min(day_of_peak_heatwave + 12, data.size)
+            for i in range(day_of_peak_heatwave, end_i):
                 if (data[i]['calced']['EHF_12day_sum'] > max_sum_ehf):
                     max_sum_ehf = data[i]['calced']['EHF_12day_sum']
             if (max_sum_ehf > 300 and max_ehf > 70):
