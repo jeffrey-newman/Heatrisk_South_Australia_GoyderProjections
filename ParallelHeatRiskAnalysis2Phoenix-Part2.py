@@ -313,42 +313,42 @@ work_dir = r"/fast/users/a1091793/Heatwave/Processed"
 ##################################################################################
 #####     Get list of stations and find all climate data series files.
 ##################################################################################
-if rank == 0:
-    os.chdir(work_dir)
-    # Read the list of stations and their coordinates from file
-    # stations is a dict with station id as the key, and with a list of values in this order: (0) station name, (1) longitude, and (2) latitude
-    stations = readStationList(station_list)
-    # Recurse through directories making a list of data files, and link these to their name and location
-    # data_files is a list with (0) path to file, (1) the climatic zone, (2) The GCM used to generate the data,
-    #         (3) The future climate scenario. (4) The station id, (5) the replicate downscale number, (6) The file format,
-    #         (7) Station name, (8) longitude, (9) lattitude
-    data_files = listRawDataFiles(rootdir, stations)
-    with open('stations.pickle', 'wb') as f1:
-        # Pickle the 'data' dictionary using the highest protocol available.
-        pickle.dump(stations, f1, pickle.HIGHEST_PROTOCOL)
-    with open('data_files.pickle', 'wb') as f2:
-        # Pickle the 'data' dictionary using the highest protocol available.
-        pickle.dump(data_files, f2, pickle.HIGHEST_PROTOCOL)
-
 # if rank == 0:
 #     os.chdir(work_dir)
-#     stations = pickle.load('stations.pickle')
-#     data_files = pickle.load('data_files.pickle')
+#     # Read the list of stations and their coordinates from file
+#     # stations is a dict with station id as the key, and with a list of values in this order: (0) station name, (1) longitude, and (2) latitude
+#     stations = readStationList(station_list)
+#     # Recurse through directories making a list of data files, and link these to their name and location
+#     # data_files is a list with (0) path to file, (1) the climatic zone, (2) The GCM used to generate the data,
+#     #         (3) The future climate scenario. (4) The station id, (5) the replicate downscale number, (6) The file format,
+#     #         (7) Station name, (8) longitude, (9) lattitude
+#     data_files = listRawDataFiles(rootdir, stations)
+#     with open('stations.pickle', 'wb') as f1:
+#         # Pickle the 'data' dictionary using the highest protocol available.
+#         pickle.dump(stations, f1, pickle.HIGHEST_PROTOCOL)
+#     with open('data_files.pickle', 'wb') as f2:
+#         # Pickle the 'data' dictionary using the highest protocol available.
+#         pickle.dump(data_files, f2, pickle.HIGHEST_PROTOCOL)
+
+if rank == 0:
+    os.chdir(work_dir)
+    stations = pickle.load('stations.pickle')
+    data_files = pickle.load('data_files.pickle')
 
 ##################################################################################
 #####     Make a list of all stations and the zones, gcm, scenarios.
 ##################################################################################
-if rank == 0:
-    os.chdir(work_dir)
-    # Create a list of the stations with only some information as needed by a few of the tasks.
-    # station_list is a list. Each element is the list with the following information : work_dir, zone, gcm, sc, statn
-    station_list = getStationDefineDict(data_files)
-    with open('station_list.pickle', 'wb') as f:
-        pickle.dump(station_list, f, pickle.HIGHEST_PROTOCOL)
-
 # if rank == 0:
 #     os.chdir(work_dir)
-#     station_dict = pickle.load('station_dict.pickle')
+#     # Create a list of the stations with only some information as needed by a few of the tasks.
+#     # station_list is a list. Each element is the list with the following information : work_dir, zone, gcm, sc, statn
+#     station_list = getStationDefineDict(data_files)
+#     with open('station_list.pickle', 'wb') as f:
+#         pickle.dump(station_list, f, pickle.HIGHEST_PROTOCOL)
+
+if rank == 0:
+    os.chdir(work_dir)
+    station_list = pickle.load('station_list.pickle')
 
 ##################################################################################
 #####     CALCULATING DMT
