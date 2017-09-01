@@ -332,8 +332,10 @@ work_dir = r"/fast/users/a1091793/Heatwave/Processed"
 
 if rank == 0:
     os.chdir(work_dir)
-    stations = pickle.load('stations.pickle')
-    data_files = pickle.load('data_files.pickle')
+    with open('stations.pickle', 'rb') as pickled_file1:
+        stations = pickle.load(pickled_file1)
+    with open('data_files.pickle', 'rb') as pickled_file2:
+        data_files = pickle.load(pickled_file2)
 
 ##################################################################################
 #####     Make a list of all stations and the zones, gcm, scenarios.
@@ -348,7 +350,8 @@ if rank == 0:
 
 if rank == 0:
     os.chdir(work_dir)
-    station_list = pickle.load('station_list.pickle')
+    with open('station_list.pickle') as pickle_file3:
+        station_list = pickle.load(pickle_file3)
 
 ##################################################################################
 #####     CALCULATING DMT
