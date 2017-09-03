@@ -350,7 +350,7 @@ if rank == 0:
 
 if rank == 0:
     os.chdir(work_dir)
-    with open('station_list.pickle') as pickle_file3:
+    with open('station_list.pickle', 'rb') as pickle_file3:
         station_list = pickle.load(pickle_file3)
 
 ##################################################################################
