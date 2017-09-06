@@ -62,41 +62,40 @@ def getStationDefineDict(data_files):
 
     for file_info in data_files:
         zone = file_info[1]
-        if zone not in t95_avg_vals:
+        gcm = file_info[2]
+        sc = file_info[3]
+        statn = file_info[7]
+        statn_info = [work_dir, zone, gcm, sc, statn]
+        station_list.append(statn_info)
+    return station_list
+
+def makeResultDicts(station_list):
+    for station_info in station_list:
+        zone = station_info[1]
+        if zone not in t95_avg_vals
             t95_avg_vals[zone] = {}
             q85_vals[zone] = {}
             stat_vals[zone] = {}
-            # calced_status[zone] = {}
 
-        gcm = file_info[2]
+        gcm = station_info[2]
         if gcm not in t95_avg_vals[zone]:
             t95_avg_vals[zone][gcm] = {}
             q85_vals[zone][gcm] = {}
             stat_vals[zone][gcm] = {}
             # calced_status[zone][gcm] = {}
 
-        sc = file_info[3]
+        sc = station_info[3]
         if sc not in t95_avg_vals[zone][gcm]:
             t95_avg_vals[zone][gcm][sc] = {}
             q85_vals[zone][gcm][sc] = {}
             stat_vals[zone][gcm][sc] = {}
             # calced_status[zone][gcm][sc] = {}
 
-        statn = file_info[7]
+        statn = station_info[4]
         if statn not in t95_avg_vals[zone][gcm][sc]:
             t95_avg_vals[zone][gcm][sc][statn] = 0
             q85_vals[zone][gcm][sc][statn] = 0
             stat_vals[zone][gcm][sc][statn] = []
-            # calced_status[zone][gcm][sc][statn] = [{}]
-
-        # rep = file_info[5]
-        # if rep not in calced_status[zone][gcm][sc][statn][0]:
-        #     calced_status[zone][gcm][sc][statn][0][rep] = []
-
-        statn_info = [work_dir, zone, gcm, sc, statn]
-        station_list.append(statn_info)
-    return station_list
-
 
 
 def make_sure_path_exists(path):
@@ -345,6 +344,7 @@ if rank == 0:
 #     # Create a list of the stations with only some information as needed by a few of the tasks.
 #     # station_list is a list. Each element is the list with the following information : work_dir, zone, gcm, sc, statn
 #     station_list = getStationDefineDict(data_files)
+#     makeResultDicts(station_list)
 #     with open('station_list.pickle', 'wb') as f:
 #         pickle.dump(station_list, f, pickle.HIGHEST_PROTOCOL)
 
@@ -352,6 +352,7 @@ if rank == 0:
     os.chdir(work_dir)
     with open('station_list.pickle', 'rb') as pickle_file3:
         station_list = pickle.load(pickle_file3)
+    makeResultDicts(station_list)
 
 ##################################################################################
 #####     CALCULATING DMT
