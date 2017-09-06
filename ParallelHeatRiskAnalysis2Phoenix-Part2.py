@@ -72,7 +72,7 @@ def getStationDefineDict(data_files):
 def makeResultDicts(station_list):
     for station_info in station_list:
         zone = station_info[1]
-        if zone not in t95_avg_vals
+        if zone not in t95_avg_vals:
             t95_avg_vals[zone] = {}
             q85_vals[zone] = {}
             stat_vals[zone] = {}
